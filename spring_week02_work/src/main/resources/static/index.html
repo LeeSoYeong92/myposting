@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+
+    <title>나만의 게시판</title>
+</head>
+<style>
+    .head {
+
+        width: 100%;
+        height: 200px;
+
+        background-color: seagreen;
+        background-position: center;
+        background-size: 600px;
+
+        color: white;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .head > button {
+        display: flex;
+        padding: 5px;
+        border-radius: 5px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form {
+        margin: 20px auto 0px auto;
+        width: 450px;
+        height: 400px;
+        border: grey 1px;
+        font-size: 10px;
+        display: none;
+    }
+
+    .table {
+        margin: 0px auto 30px auto;
+        width: 750px;
+        font-size: 10px;
+    }
+
+    .form-control {
+        font-size: 10px;
+    }
+
+    .btn {
+        font-size: 10px;
+        padding: 0px;
+    }
+
+    .card {
+        display: none;
+    }
+
+    .edit-card {
+        display: none;
+    }
+
+    .password-body {
+        display: none;
+    }
+
+</style>
+<script>
+
+    function open_create_btn() {
+        $("#create-box").show();
+    }
+
+    function close_create_btn() {
+        $("#create-box").hide();
+    }
+
+    $(document).ready(function () {
+        // HTML 문서를 로드할 때마다 실행합니다.
+        getMessages();
+    })
+
+    //게시판 목록 불러오기
+    function getMessages() {
+        $('#table-list').empty(); // 페이지 로드할 때마다 목록 지우기
+        $.ajax({
+            type: 'GET',
+            url: '/visit/posts',
+            success: function (response) {
+                for (let i = 0; i < response.length; i++) {
+                    let post = response[i];
+                    let id = post['id'];
+                    let username = post['username'];
+                    let title = post['title'];
+                    let content = post['content'];
+                    let modifiedAt = post['modifiedAt'];
+
+                    let temp_html = `
+                    <tr xmlns="http://www.w3.org/1999/html">
+
+                        <th scope="row">${id}</th>
+                        <td>${username}</td>
+                        <td>${title}</a></td>
+                        <td>${modifiedAt}</td>
+
+                        <td> <button type="button" class="btn btn-success" onclick="show_detail('${id}')">상세 보기</button></td>
+                          <td> <button type="button" class="btn btn-success" onclick="location.href ='detail.html'">댓글보기</button></td>
+
+
+                        <td>
+                            <div class="card" id="${id}-detail-box">
+                                <div class="card-header">
+                                    제목 : ${title}
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">${content}</p>
+                                    <a href="#" class="btn btn-primary" onclick="submit('${id}')">수정</a>
+                                    <a href="#" class="btn btn-primary" onclick="real_Delete('${id}')">삭제</a>
+                                    <a href="#" class="btn btn-primary" onclick="close_detail('${id}')">닫기</a>
+                                </div>
+                            </div>
+
+
+                            <div class="edit-card" id="${id}-detail-edit-box">
+                                <div class="card-header">
+                                         제목 : ${title} 작성자 : ${username}
+                                </div>
+                                <div class="card-body">
+                                         작성자수정란. <input type="text" id="${id}-edit_username"></br>
+                                         제목수정란 <input type="text" id="${id}-edit_title"></br>
+                                         내용수정란. <input type="text" id="${id}-edit_content"></br></br>
+                                         <div class="btn btn-primary" onclick="submit('${id}')">수정</div>
+                                         <div class="btn btn-primary" onclick="real_Delete('${id}')">삭제</div>
+                                         <div class="btn btn-primary" onclick="close_detail('${id}')">닫기</div>
+                                </div>
+                            </div>
+                            </td></tr>`
+
+                    $('#table-list').append(temp_html);
+                }
+            }
+        })
+    }
+
+
+    function close_detail(id) {
+        $(`#${id}-detail-box`).hide();
+        $(`#${id}-detail-edit-box`).hide();
+        $(`#${id}-password-check-box`).hide();
+    }
+
+    function show_detail(id) {
+        $(`#${id}-detail-box`).show();
+    }
+
+    // 게시글 생성
+    function writePost() {
+        // 1. 작성한 메모를 불러옵니다.
+        let username = $('#inputEmail4').val();
+        let title = $('#inputAddress').val();
+        let content = $('#exampleFormControlTextarea1').val();
+        let password = $('#inputPassword4').val();
+
+        // 4. 전달할 data JSON으로 만듭니다.
+        let data = {'username': username, 'content': content, 'title': title, 'password': password};
+
+        // 5. POST /api/memos 에 data를 전달합니다.
+        $.ajax({
+            type: "POST",
+            url: "/api/posts",
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (response) {
+                alert('메시지가 성공적으로 작성되었습니다.');
+                window.location.reload();
+            }
+        });
+    }
+
+    // 게시글 수정
+    function submit(id) {
+        // 1. 수정한 내용 불러오기
+        let content = $(`#${id}-edit_content`).val();
+        let title = $(`#${id}-edit_title`).val();
+        let username = $(`#${id}-edit_username`).val();
+
+        // 3. 전달할 data JSON으로 만듭니다.
+        let data = {'content': content, 'title': title, 'username': username};
+
+        // 4. PUT /api/memos/{id} 에 data를 전달합니다.
+        $.ajax({
+            type: "PUT",
+            url: `/api/posts/${id}`,
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (response) {
+                window.location.reload();
+            }
+        });
+    }
+
+
+    // 메모를 삭제합니다.
+    function real_Delete(id) {
+        $.ajax({
+            type: "DELETE",
+            url: `/api/posts/${id}`,
+            success: function (response) {
+                alert('메시지 삭제에 성공하였습니다.');
+                window.location.reload();
+            }
+        })
+    }
+</script>
+
+<body>
+
+<!--상단바-->
+<div class="head">
+    <h5>나만의 게시판</h5>
+    <button type="button" class="btn btn-dark" onclick="open_create_btn()">게시글 생성하기</button>
+</div>
+
+<!--게시글 생성 박스-->
+<div class="form" id="create-box">
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="inputEmail4">작성자</label>
+            <input type="email" class="form-control" id="inputEmail4" placeholder="이름">
+        </div>
+        <div class="form-group col-md-6">
+            <label for="inputPassword4">Password</label>
+            <input type="password" class="form-control" id="inputPassword4" placeholder="Password">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputAddress">제목</label>
+        <input type="text" class="form-control" id="inputAddress" placeholder="제목">
+    </div>
+    <div class="form-group">
+        <label for="exampleFormControlTextarea1">게시글 내용을 입력하세요.</label>
+        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+    </div>
+    <button type="button" class="btn btn-dark" onclick="writePost()">생성하기</button>
+    <button type="button" class="btn btn-dark" onclick="close_create_btn()">닫기</button>
+</div>
+
+<!--게시판 테이블-->
+<table class="table" id="table-box">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">작성자명</th>
+        <th scope="col">제목</th>
+        <th scope="col">작성날짜</th>
+    </tr>
+    </thead>
+    <tbody id="table-list">
+    </tbody>
+</table>
+
+
+</body>
+</html>

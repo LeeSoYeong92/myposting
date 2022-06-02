@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Title</title>
+</head>
+<script>
+    function writeReply() {
+        let content = $('#exampleFormControlTextarea1').val();
+
+        // 4. 전달할 data JSON으로 만듭니다.
+        let data = {'content': content};
+
+        // 5. POST /api/memos 에 data를 전달합니다.
+        $.ajax({
+            type: "POST",
+            url: "/api/reply",
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (response) {
+                alert('메시지가 성공적으로 작성되었습니다.');
+                window.location.reload();
+            }
+        });
+    }
+
+</script>
+<body>
+<div class="form" id="reply-box">
+
+    <div class="form-group">
+        <label for="exampleFormControlTextarea1">댓글을 입력하세요.</label>
+        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+    </div>
+    <button type="button" class="btn btn-dark" onclick="writeReply()">생성하기</button>
+
+</div>
+</body>
+</html>
